@@ -18,3 +18,6 @@ Enthält automatisch einen SHA-256-Hash, um die Integrität der eingebetteten Da
 - Nur verlustfreie Formate (PNG, BMP, TIFF)
 - JPEG nicht geeignet
 - Dateigröße ≤ verfügbare Kapazität
+
+## Verwendung
+`py update.py --input_pic=input.png --input_data=data.zip --stego_pic=stego.png`
