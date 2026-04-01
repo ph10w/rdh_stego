@@ -3,6 +3,7 @@ import numpy as np
 import struct
 import os
 import hashlib
+import shutil
 
 HEADER_PIXELS = 2000
 STRUCT_FORMAT = "<BBIHH"  # peak, zero, payload_len, filename_len, hash_len
@@ -159,3 +160,64 @@ def extract_file(stego_path, output_folder):
 
     restored_img = Image.fromarray(restored_flat.reshape(arr.shape).astype(np.uint8))
     return output_path, restored_img
+
+# -------------------------
+# update_file_in_stego
+# -------------------------
+def update_file_in_stego(stego_path, new_file_path, output_path, temp_output_folder="./temp"):
+    """
+    Aktualisiert oder fügt eine Datei in einem Stego-Bild hinzu.
+    - Erkennt, ob das Bild gültige RDH-Daten enthält.
+    - Falls ungültig oder beschädigt, wird das Bild wie neu behandelt.
+    """
+
+    os.makedirs(temp_output_folder, exist_ok=True)
+
+    img = Image.open(stego_path).convert("L")
+    arr = np.array(img)
+    flat = arr.flatten()
+
+    header_size = struct.calcsize(STRUCT_FORMAT)
+    header_valid = False
+
+    try:
+        # Header auslesen
+        header_bytes = extract_header_lsb(flat, header_size)
+        peak, zero, payload_len, filename_len, hash_len = struct.unpack(STRUCT_FORMAT, header_bytes)
+
+        # Prüfe Payload-Länge und Filename-Länge auf sinnvolle Werte
+        if payload_len > 0 and filename_len > 0 and filename_len < payload_len:
+            # Payload auslesen
+            expected_bits = payload_len * 8
+            bits, _ = hs_extract(flat, peak, zero, expected_bits, HEADER_PIXELS)
+            payload = from_bits(bits)
+
+            # Dateiname prüfen
+            try:
+                _ = payload[:filename_len].decode("utf-8")
+                header_valid = True
+            except UnicodeDecodeError:
+                header_valid = False
+        else:
+            header_valid = False
+
+    except Exception:
+        header_valid = False
+
+    if not header_valid:
+        print("⚠️ Kein gültiger RDH-Header gefunden – Bild wird wie neu behandelt")
+        embed_file(stego_path, output_path, new_file_path)
+        if os.path.exists(temp_output_folder):
+            shutil.rmtree(temp_output_folder, ignore_errors=True)
+        return
+
+    # Header gültig → extract → restore → embed neue Datei
+    _, restored_img = extract_file(stego_path, temp_output_folder)
+    temp_image_path = os.path.join(temp_output_folder, "restored.png")
+    restored_img.save(temp_image_path)
+    embed_file(temp_image_path, output_path, new_file_path)
+
+    if os.path.exists(temp_output_folder):
+        shutil.rmtree(temp_output_folder, ignore_errors=True)
+
+    print(f"✅ Stego-Bild aktualisiert: {output_path}")

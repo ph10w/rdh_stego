@@ -3,8 +3,8 @@ Versteckt beliebige Dateien in PNG-Bildern (Reversible Data Hiding) und stellt d
 Enthält automatisch einen SHA-256-Hash, um die Integrität der eingebetteten Datei zu prüfen.
 
 ## Features
+- Dateien in bestehenden Stego-Bildern **aktualisieren** ohne Originalbild
 - Beliebige Dateien einbetten (PDF, ZIP, Bilder etc.)
-- Originalbild rekonstruieren (außer Header-Pixel)
 - Dateiname & SHA-256-Hash im Payload gespeichert
 - Automatische Integritätsprüfung beim Extrahieren
 
