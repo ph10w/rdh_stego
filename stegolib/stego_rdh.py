@@ -147,7 +147,8 @@ def extract_file(stego_path, output_folder):
     filename = payload[:filename_len].decode()
     file_data = payload[filename_len:-hash_len]
     hash_extracted = payload[-hash_len:]
-
+    
+    os.makedirs(output_folder, exist_ok=True)
     output_path = os.path.join(output_folder, filename)
     with open(output_path, "wb") as f:
         f.write(file_data)
